@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import RegistrationSerializer, UserSerializer
+from .throttles import AuthThrottle
 
 User = get_user_model()
 
@@ -17,6 +18,7 @@ def get_tokens_for_user(user):
 
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = (AuthThrottle,)
     
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
@@ -31,6 +33,7 @@ class RegistrationView(APIView):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = (AuthThrottle,)
     
     def post (self, request):
         email = request.data.get('email')

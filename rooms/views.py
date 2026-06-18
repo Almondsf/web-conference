@@ -6,11 +6,14 @@ from .models import Room, Participant
 from .serializers import RoomSerializer, CreateRoomSerializer
 from django.shortcuts import get_object_or_404
 
+def is_host(user, room):
+    return room.host == user
+
 class RoomListCreateView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        rooms = Room.objects.filter(is_active=True, host=request.user)
+        rooms = Room.objects.filter(is_active=True, participants__user=request.user)
         serializer = RoomSerializer(rooms, many=True)
         return Response(serializer.data)
     
@@ -25,7 +28,7 @@ class RoomDetailView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, code):
-        room = get_object_or_404(Room, code=code, is_active=True, host=request.user, participants__user=request.user)
+        room = get_object_or_404(Room, code=code, is_active=True, participants__user=request.user)
         serializer = RoomSerializer(room)
         return Response(serializer.data)
     
@@ -73,3 +76,25 @@ class LeaveRoomView(APIView):
         participant.is_active = False
         participant.save()
         return Response({'message': 'Left room successfully'})
+
+class MuteParticipantView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, code, email):
+        room = get_object_or_404(Room, code=code, is_active=True)
+
+        if not is_host(request.user, room):
+            return Response(
+                {'error': 'Only the host can mute participants'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        User = get_user_model()
+        target = get_object_or_404(User, email=email)
+        participant = get_object_or_404(
+            Participant, room=room, user=target, is_active=True
+        )
+        participant.is_muted = True
+        participant.save()
+
+        return Response({'message': f'{email} has been muted'})

@@ -19,6 +19,7 @@ class Room(models.Model):
     is_active = models.BooleanField(default=True)
     password = models.CharField(max_length=255, blank=True, null=True)
     max_participants = models.PositiveIntegerField(default=10)
+    is_locked = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -31,6 +32,7 @@ class Participant(models.Model):
         on_delete=models.CASCADE,
         related_name='participations'
     )
+    is_muted = models.BooleanField(default=False)
     joined_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
